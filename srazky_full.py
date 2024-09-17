@@ -57,7 +57,7 @@ def fetch_JSON(url):
     # Convert DT to datetime format for better plotting
     df_all['DT'] = pd.to_datetime(df_all['DT'])
     # Filter year
-    df_all = df_all[df_all['DT'].dt.year > 2010]
+    df_all = df_all[df_all['DT'].dt.year > 1986]
     # Filter srazky
     df_all = df_all[df_all["ELEMENT"] == "SRA"]
     # Ensure VAL is numeric, and drop rows with non-numeric values
