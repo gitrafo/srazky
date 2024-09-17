@@ -78,7 +78,6 @@ def find_json_files(url, station_id):
         
     return json_files
 
-
 def main():
     #### Chelcice
     station_id = "dly-0-203-0-11539"
