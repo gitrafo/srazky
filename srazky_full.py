@@ -127,8 +127,9 @@ def main():
     fig.add_scatter(x=df_all['DT'], y=df_all['6_day_srazky'], mode='lines', name='6_day_srazky [mm]')
     fig.add_scatter(x=df_all['DT'], y=df_all['8_day_srazky'], mode='lines', name='8_day_srazky [mm]')
     fig.add_scatter(x=df_all['DT'], y=df_all['10_day_srazky'], mode='lines', name='10_day_srazky [mm]')
+    fig.update_layout(title_text="Srážky - Chelčice")
     fig.update_xaxes(title_text="Date")
-    fig.update_yaxes(title_text="Chelčice [mm]")
+    fig.update_yaxes(title_text="srážky [mm]")
 
     combine_plotly_figs_to_html([fig], "index.html",auto_open=True)
 
