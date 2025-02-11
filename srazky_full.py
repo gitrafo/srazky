@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
+import numpy as np
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
@@ -59,13 +60,14 @@ def fetch_JSON(url):
     # Filter year
     df_all = df_all[df_all['DT'].dt.year > 1986]
     # Filter srazky
-    df_all = df_all[df_all["ELEMENT"] == "SRA"]
+    #df_all = df_all[df_all["ELEMENT"] == "SRA"]
+    df_filtered = df_all[df_all["ELEMENT"].isin(["SRA", "TMA", "TMI"])]
     # Ensure VAL is numeric, and drop rows with non-numeric values
-    df_all['VAL'] = pd.to_numeric(df_all['VAL'], errors='coerce')
-    df_all['VAL'] = df_all['VAL'].astype('float')
-    df_all = df_all.dropna(subset=['VAL']).reset_index(drop=True)
+    df_filtered['VAL'] = pd.to_numeric(df_filtered['VAL'], errors='coerce')
+    df_filtered['VAL'] = df_filtered['VAL'].astype('float')
+    df_filtered = df_filtered.dropna(subset=['VAL']).reset_index(drop=True)
     
-    return df_all
+    return df_filtered
 
 def find_json_files(url, station_id):
     response = requests.get(url)
@@ -79,11 +81,12 @@ def find_json_files(url, station_id):
     return json_files
 
 def main():
-    #### Chelcice
+    ### Chelcice
     station_id = "dly-0-203-0-11539"
     url_history = "https://opendata.chmi.cz/meteorology/climate/historical/data/daily/" + station_id + ".json"
     url_recent = "https://opendata.chmi.cz/meteorology/climate/recent/data/daily/"
-    #### CB Roznov
+    
+    # ### CB Roznov
     # station_id = "dly-0-20000-0-11546"
     # url_history = "https://opendata.chmi.cz/meteorology/climate/historical/data/daily/" + station_id + ".json"
     # url_recent = "https://opendata.chmi.cz/meteorology/climate/recent/data/daily/"
@@ -95,6 +98,7 @@ def main():
     #### history data ####
     ######################
     df_history = fetch_JSON(url_history)
+    
     ######################
     #### recent data #####
     ######################
@@ -104,34 +108,74 @@ def main():
     
     df_all = pd.concat([df_history, df_recent]).reset_index(drop=True).sort_values(by=['DT']).reset_index(drop=True)
 
+    df_api =  df_all[df_all["ELEMENT"].isin(["SRA"])]
+    df_temperature = df_all[df_all["ELEMENT"].isin(["TMA", "TMI"])]
+    # pivot
+    df_temperature = df_temperature.drop_duplicates(subset=['DT', 'ELEMENT']).pivot(index ='DT', columns='ELEMENT', values = 'VAL').reset_index()
+
+    figures = []
+    ##############
+    ####SRAZKY####
+    ##############
      # API 30
-    df_all['mutiplied_VAL'] = df_all['VAL'] * 0.93
-    df_all['API30'] = df_all['mutiplied_VAL'].rolling(window=30).sum()
+    df_api['mutiplied_VAL'] = df_api['VAL'] * 0.93
+    df_api['API30'] = df_api['mutiplied_VAL'].rolling(window=30).sum()
     # 2-day srazky
-    df_all['2_day_srazky'] = df_all['VAL'].rolling(window=2).sum()
+    df_api['2_day_srazky'] = df_api['VAL'].rolling(window=2).sum()
     # 4-day srazky
-    df_all['4_day_srazky'] = df_all['VAL'].rolling(window=4).sum()
+    df_api['4_day_srazky'] = df_api['VAL'].rolling(window=4).sum()
     # 6-day srazky
-    df_all['6_day_srazky'] = df_all['VAL'].rolling(window=6).sum()
+    df_api['6_day_srazky'] = df_api['VAL'].rolling(window=6).sum()
     # 8-day srazky
-    df_all['8_day_srazky'] = df_all['VAL'].rolling(window=8).sum()
+    df_api['8_day_srazky'] = df_api['VAL'].rolling(window=8).sum()
     # 10-day srazky
-    df_all['10_day_srazky'] = df_all['VAL'].rolling(window=10).sum()
+    df_api['10_day_srazky'] = df_api['VAL'].rolling(window=10).sum()
 
     # Create an interactive plot
-    fig = go.Figure()
-    fig.add_scatter(x=df_all['DT'], y=df_all['API30'], mode='lines', name='API30 [mm]')
-    fig.add_scatter(x=df_all['DT'], y=df_all['VAL'], mode='lines', name='1_day_srazky [mm]')
-    fig.add_scatter(x=df_all['DT'], y=df_all['2_day_srazky'], mode='lines', name='2_day_srazky [mm]')
-    fig.add_scatter(x=df_all['DT'], y=df_all['4_day_srazky'], mode='lines', name='4_day_srazky [mm]')
-    fig.add_scatter(x=df_all['DT'], y=df_all['6_day_srazky'], mode='lines', name='6_day_srazky [mm]')
-    fig.add_scatter(x=df_all['DT'], y=df_all['8_day_srazky'], mode='lines', name='8_day_srazky [mm]')
-    fig.add_scatter(x=df_all['DT'], y=df_all['10_day_srazky'], mode='lines', name='10_day_srazky [mm]')
-    fig.update_layout(title_text="Srážky - Chelčice")
-    fig.update_xaxes(title_text="Date")
-    fig.update_yaxes(title_text="srážky [mm]")
+    fig_srazky = go.Figure()
+    fig_srazky.add_scatter(x=df_api['DT'], y=df_api['API30'], mode='lines', name='API30 [mm]')
+    fig_srazky.add_scatter(x=df_api['DT'], y=df_api['VAL'], mode='lines', name='1_day_srazky [mm]')
+    fig_srazky.add_scatter(x=df_api['DT'], y=df_api['2_day_srazky'], mode='lines', name='2_day_srazky [mm]')
+    fig_srazky.add_scatter(x=df_api['DT'], y=df_api['4_day_srazky'], mode='lines', name='4_day_srazky [mm]')
+    fig_srazky.add_scatter(x=df_api['DT'], y=df_api['6_day_srazky'], mode='lines', name='6_day_srazky [mm]')
+    fig_srazky.add_scatter(x=df_api['DT'], y=df_api['8_day_srazky'], mode='lines', name='8_day_srazky [mm]')
+    fig_srazky.add_scatter(x=df_api['DT'], y=df_api['10_day_srazky'], mode='lines', name='10_day_srazky [mm]')
+    fig_srazky.update_layout(title_text="Srážky - Chelčice")
+    fig_srazky.update_xaxes(title_text="Date")
+    fig_srazky.update_yaxes(title_text="srážky [mm]")
 
-    combine_plotly_figs_to_html([fig], "index.html",auto_open=True)
+    figures.append(fig_srazky)
+
+    ###################
+    ####TEMPERATURE####
+    ###################
+     # Create an interactive plot
+    fig_temperature = go.Figure()
+    fig_temperature.add_scatter(x=df_temperature['DT'], y=df_temperature['TMA'], mode='lines', name='Tmax [°C]')
+    fig_temperature.add_scatter(x=df_temperature['DT'], y=df_temperature['TMI'], mode='lines', name='Tmin [°C]')
+    
+    # Calculate the trend line for Tmax
+    z_tmax = np.polyfit(df_temperature['DT'].astype('int64'), df_temperature['TMA'], 1)  # Linear fit
+    p_tmax = np.poly1d(z_tmax)
+    trend_tmax = p_tmax(df_temperature['DT'].astype('int64'))
+
+    # Calculate the trend line for Tmin
+    z_tmin = np.polyfit(df_temperature['DT'].astype('int64'), df_temperature['TMI'], 1)  # Linear fit
+    p_tmin = np.poly1d(z_tmin)
+    trend_tmin = p_tmin(df_temperature['DT'].astype('int64'))
+
+    # Add trend lines to the figure
+    fig_temperature.add_scatter(x=df_temperature['DT'], y=trend_tmax, mode='lines', name='Tmax Trend', line=dict(dash='dash', color='red'))
+    fig_temperature.add_scatter(x=df_temperature['DT'], y=trend_tmin, mode='lines', name='Tmin Trend', line=dict(dash='dash', color='blue'))
+        
+
+    fig_temperature.update_layout(title_text="Teplota - Chelčice")
+    fig_temperature.update_xaxes(title_text="Date")
+    fig_temperature.update_yaxes(title_text="Tmax, Tmin [°C]")
+    
+    figures.append(fig_temperature)
+
+    combine_plotly_figs_to_html(figures, "index.html",auto_open=True)
 
 if __name__ == "__main__":
     main()
