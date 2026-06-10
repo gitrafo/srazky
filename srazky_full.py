@@ -58,7 +58,7 @@ def fetch_JSON(url):
     # Convert DT to datetime format for better plotting
     df_all['DT'] = pd.to_datetime(df_all['DT'])
     # Filter year
-    df_all = df_all[df_all['DT'].dt.year > 1986]
+    df_all = df_all[df_all['DT'].dt.year > 2000]
     # Filter srazky
     #df_all = df_all[df_all["ELEMENT"] == "SRA"]
     df_filtered = df_all[df_all["ELEMENT"].isin(["SRA", "TMA", "TMI"])]
@@ -109,9 +109,9 @@ def main():
     df_all = pd.concat([df_history, df_recent]).reset_index(drop=True).sort_values(by=['DT']).reset_index(drop=True)
 
     df_api =  df_all[df_all["ELEMENT"].isin(["SRA"])]
-    df_temperature = df_all[df_all["ELEMENT"].isin(["TMA", "TMI"])]
+    #df_temperature = df_all[df_all["ELEMENT"].isin(["TMA", "TMI"])]
     # pivot
-    df_temperature = df_temperature.drop_duplicates(subset=['DT', 'ELEMENT']).pivot(index ='DT', columns='ELEMENT', values = 'VAL').reset_index()
+    #df_temperature = df_temperature.drop_duplicates(subset=['DT', 'ELEMENT']).pivot(index ='DT', columns='ELEMENT', values = 'VAL').reset_index()
 
     figures = []
     ##############
@@ -149,31 +149,31 @@ def main():
     ###################
     ####TEMPERATURE####
     ###################
-     # Create an interactive plot
-    fig_temperature = go.Figure()
-    fig_temperature.add_scatter(x=df_temperature['DT'], y=df_temperature['TMA'], mode='lines', name='Tmax [°C]')
-    fig_temperature.add_scatter(x=df_temperature['DT'], y=df_temperature['TMI'], mode='lines', name='Tmin [°C]')
+    #  # Create an interactive plot
+    # fig_temperature = go.Figure()
+    # fig_temperature.add_scatter(x=df_temperature['DT'], y=df_temperature['TMA'], mode='lines', name='Tmax [°C]')
+    # fig_temperature.add_scatter(x=df_temperature['DT'], y=df_temperature['TMI'], mode='lines', name='Tmin [°C]')
     
-    # Calculate the trend line for Tmax
-    z_tmax = np.polyfit(df_temperature['DT'].astype('int64'), df_temperature['TMA'], 1)  # Linear fit
-    p_tmax = np.poly1d(z_tmax)
-    trend_tmax = p_tmax(df_temperature['DT'].astype('int64'))
+    # # Calculate the trend line for Tmax
+    # z_tmax = np.polyfit(df_temperature['DT'].astype('int64'), df_temperature['TMA'], 1)  # Linear fit
+    # p_tmax = np.poly1d(z_tmax)
+    # trend_tmax = p_tmax(df_temperature['DT'].astype('int64'))
 
-    # Calculate the trend line for Tmin
-    z_tmin = np.polyfit(df_temperature['DT'].astype('int64'), df_temperature['TMI'], 1)  # Linear fit
-    p_tmin = np.poly1d(z_tmin)
-    trend_tmin = p_tmin(df_temperature['DT'].astype('int64'))
+    # # Calculate the trend line for Tmin
+    # z_tmin = np.polyfit(df_temperature['DT'].astype('int64'), df_temperature['TMI'], 1)  # Linear fit
+    # p_tmin = np.poly1d(z_tmin)
+    # trend_tmin = p_tmin(df_temperature['DT'].astype('int64'))
 
-    # Add trend lines to the figure
-    fig_temperature.add_scatter(x=df_temperature['DT'], y=trend_tmax, mode='lines', name='Tmax Trend', line=dict(dash='dash', color='red'))
-    fig_temperature.add_scatter(x=df_temperature['DT'], y=trend_tmin, mode='lines', name='Tmin Trend', line=dict(dash='dash', color='blue'))
+    # # Add trend lines to the figure
+    # fig_temperature.add_scatter(x=df_temperature['DT'], y=trend_tmax, mode='lines', name='Tmax Trend', line=dict(dash='dash', color='red'))
+    # fig_temperature.add_scatter(x=df_temperature['DT'], y=trend_tmin, mode='lines', name='Tmin Trend', line=dict(dash='dash', color='blue'))
         
 
-    fig_temperature.update_layout(title_text="Teplota - Chelčice")
-    fig_temperature.update_xaxes(title_text="Date")
-    fig_temperature.update_yaxes(title_text="Tmax, Tmin [°C]")
+    # fig_temperature.update_layout(title_text="Teplota - Chelčice")
+    # fig_temperature.update_xaxes(title_text="Date")
+    # fig_temperature.update_yaxes(title_text="Tmax, Tmin [°C]")
     
-    figures.append(fig_temperature)
+    # figures.append(fig_temperature)
 
     combine_plotly_figs_to_html(figures, "index.html",auto_open=True)
 
